@@ -38,6 +38,7 @@ enum TransactionStatus {
 model User {
   id        String    @id @default(uuid())
   email     String    @unique
+  username  String    @unique
   password  String
   firstName String
   lastName  String
@@ -53,6 +54,7 @@ model User {
 model Account {
   id            String        @id @default(uuid())
   accountNumber String        @unique
+  alias         String        @unique
   balance       Decimal       @default(0.0) @db.Decimal(12, 2)
   type          AccountType   @default(SAVINGS)
   status        AccountStatus @default(ACTIVE)

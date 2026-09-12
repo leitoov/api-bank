@@ -10,56 +10,93 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
+  //Registro de usuario nuevo, recibe dto RegisterDto
   async register(registerDto: RegisterDto) {
-    const { email, password, firstName, lastName, document } = registerDto;
+    const { email, username, password, firstName, lastName, document, alias } = registerDto;
 
-    // Verificar si el email o documento ya existen
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedUsername = username.toLowerCase().trim();
+    const normalizedDocument = document.trim();
+
+    //Verificar si email, username o documento ya existen
     const existingUser = await this.prisma.user.findFirst({
       where: {
-        OR: [{ email }, { document }],
+        OR: [
+          { email: normalizedEmail },
+          { username: normalizedUsername },
+          { document: normalizedDocument },
+        ],
       },
     });
 
+    // Si encontró algun usuario con ese email, username o DNI
     if (existingUser) {
-      if (existingUser.email === email) {
-        throw new ConflictException('El correo electrónico ya está registrado');
+      throw new ConflictException('Usted ya cuenta con un usuario registrado, inicie sesión o restablezca su contraseña');
+    }
+
+    //Alias por defecto (si no tiene uno, se genera uno por defecto)
+    let finalAlias = alias ? alias.toLowerCase().trim() : `${normalizedUsername}.bank`;
+
+    // Validar si el alias ya existe
+    const existingAccountWithAlias = await this.prisma.account.findUnique({
+      where: { alias: finalAlias },
+    });
+
+    if (existingAccountWithAlias) {
+      if (alias) {
+        throw new ConflictException('El alias ingresado ya está en uso por otra cuenta');
       }
-      throw new ConflictException('El documento ya está registrado');
+      // Si fue autogenerado y chocó, agregar sufijo numérico
+      finalAlias = `${normalizedUsername}.${Math.floor(100 + Math.random() * 900)}.bank`;
     }
 
     // Hashear la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Crear usuario y su primera cuenta bancaria de ahorro por defecto
+    // crea número de cuenta de 10 dígitos
     const randomAccountNumber = Math.floor(1000000000 + Math.random() * 9000000000).toString();
 
+    //Crear usuario y cuenta
     const user = await this.prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
+        username: normalizedUsername,
         password: hashedPassword,
-        firstName,
-        lastName,
-        document,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        document: normalizedDocument,
         accounts: {
           create: {
             accountNumber: randomAccountNumber,
+            alias: finalAlias,
             balance: 0.0,
-            type: 'SAVINGS',
+            type: 'SAVINGS', //Tipo de cuenta por defecto (Ahorro)
             status: 'ACTIVE',
-            currency: 'USD',
+            currency: 'USD', //Moneda por defecto
           },
         },
       },
       select: {
         id: true,
         email: true,
+        username: true,
         firstName: true,
         lastName: true,
         document: true,
         role: true,
-        accounts: true,
+        accounts: {
+          select: {
+            id: true,
+            accountNumber: true,
+            alias: true,
+            balance: true,
+            currency: true,
+            status: true,
+            type: true,
+          },
+        },
         createdAt: true,
       },
     });
@@ -75,11 +112,22 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
+    const normalizedEmail = email.toLowerCase().trim();
 
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
       include: {
-        accounts: true,
+        accounts: {
+          select: {
+            id: true,
+            accountNumber: true,
+            alias: true,
+            balance: true,
+            currency: true,
+            status: true,
+            type: true,
+          },
+        },
       },
     });
 
@@ -94,7 +142,7 @@ export class AuthService {
 
     const token = this.generateToken(user.id, user.email);
 
-    // Omitir contraseña en la respuesta
+    // Omitir contraseña
     const { password: _, ...userData } = user;
 
     return {
