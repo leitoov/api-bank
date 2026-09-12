@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor.js';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -21,6 +23,12 @@ async function bootstrap() {
     }),
   );
 
+  // Interceptor global para estandarizar respuestas de exito (200, 201)
+  app.useGlobalInterceptors(new ResponseInterceptor());
+
+  // Filtro global para estandarizar respuestas de error (400, 401, 404, 409, 500)
+  app.useGlobalFilters(new HttpExceptionFilter());
+
   // Configuración de Swagger / OpenAPI
   const config = new DocumentBuilder()
     .setTitle('Bank API')
@@ -34,7 +42,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  console.log(`🚀 Banco API corriendo en: http://localhost:${port}/api`);
-  console.log(`📚 Documentación Swagger en: http://localhost:${port}/api/docs`);
+  console.log(`Banco API corriendo en: http://localhost:${port}/api`);
+  console.log(`Documentacion Swagger en: http://localhost:${port}/api/docs`);
 }
 await bootstrap();
