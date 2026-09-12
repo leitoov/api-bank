@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  ADMIN
+}
+
+enum AccountType {
+  SAVINGS
+  CHECKING
+}
+
+enum AccountStatus {
+  ACTIVE
+  BLOCKED
+  CLOSED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  firstName String
+  lastName  String
+  document  String    @unique
+  role      Role      @default(CLIENT)
+  accounts  Account[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Account {
+  id            String        @id @default(uuid())
+  accountNumber String        @unique
+  balance       Decimal       @default(0.0) @db.Decimal(12, 2)
+  type          AccountType   @default(SAVINGS)
+  status        AccountStatus @default(ACTIVE)
+  currency      String        @default("USD")
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sentTrans     Transaction[] @relation("SenderAccount")
+  receivedTrans Transaction[] @relation("ReceiverAccount")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("accounts")
+}
+
+model Transaction {
+  id              String            @id @default(uuid())
+  amount          Decimal           @db.Decimal(12, 2)
+  type            TransactionType
+  status          TransactionStatus @default(COMPLETED)
+  description     String?
+  sourceAccountId String?
+  sourceAccount   Account?          @relation("SenderAccount", fields: [sourceAccountId], references: [id])
+  targetAccountId String?
+  targetAccount   Account?          @relation("ReceiverAccount", fields: [targetAccountId], references: [id])
+  createdAt       DateTime          @default(now())
+
+  @@map("transactions")
+}
