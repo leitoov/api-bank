@@ -1,114 +1,110 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Api-Bank
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Api-Bank es una API desarrollada con NestJS, Prisma y PostgreSQL que simula transacciones bancarias basicas entre usuarios. Incluye abm de usuarios, manejo de saldos, depositos, transferencias por alias, dni o username, y validaciones de seguridad.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Funcionalidades
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### ABM y Autenticacion de Usuarios
+- Registro de usuarios con validacion de datos unicos (email, dni, username y alias).
+- Creacion automatica de cuenta bancaria al registrarse con numero de cuenta y alias por defecto.
+- Encriptacion de contraseñas con bcryptjs y autenticacion con JWT.
 
-## Project setup
+### Cuentas y Alias
+- Consulta de informacion de cuenta propia (saldo, alias, numero de cuenta y titular).
+- Actualizacion de alias personalizado validando que no este en uso.
 
+### Transacciones
+- Depositos: Cargar saldo en la cuenta propia.
+- Transferencias: Enviar dinero a otro usuario buscandolo por su alias, dni, username, email o numero de cuenta.
+- Historial de movimientos: Consulta de ingresos y egresos con detalle de la contraparte.
+
+### Validaciones
+- Validacion de existencia de saldo antes de realizar transferencias.
+- Validacion para impedir que un usuario se transfiera dinero a si mismo.
+- Transacciones atomicas con prisma para asegurar la consistencia de saldos.
+- Validaciones en DTOs con class-validator para tipos de datos, formatos y montos positivos.
+
+---
+
+## Tecnologias utilizadas
+
+- NestJS
+- PostgreSQL
+- Prisma ORM
+- Docker y Docker Compose
+- Passport y JWT
+- bcryptjs
+- class-validator y class-transformer
+- Swagger (OpenAPI)
+
+---
+
+## Instalacion y ejecucion
+
+### 1. Clonar el repositorio
 ```bash
-$ npm install
+git clone https://github.com/leitoov/api-bank.git
+cd api-bank
 ```
 
-## Compile and run the project
-
+### 2. Instalar dependencias
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+### 3. Configurar variables de entorno
+Crear un archivo `.env` en la raiz tomando como base `.env.example`:
+```env
+PORT=3000
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/bank_db?schema=public"
+JWT_SECRET="clave_secreta_jwt"
+JWT_EXPIRES_IN="1d"
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### 4. Levantar la base de datos con Docker
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+docker compose up -d
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 5. Aplicar migraciones de Prisma
+```bash
+npx prisma migrate dev --name init
+```
 
-## Observability
+### 6. Iniciar el servidor
+```bash
+npm run start:dev
+```
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+La API quedara corriendo en: `http://localhost:3000/api`
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+---
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+## Documentacion con Swagger
 
-## Resources
+Para ver y probar los endpoints desde el navegador:
+`http://localhost:3000/api/docs`
 
-Check out a few resources that may come in handy when working with NestJS:
+### Endpoints disponibles:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observer](https://observer.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+| Modulo | Metodo | Endpoint | Descripcion | Requiere Token |
+| :--- | :---: | :--- | :--- | :---: |
+| Auth | POST | /api/auth/register | Registro de nuevo usuario y cuenta | No |
+| Auth | POST | /api/auth/login | Iniciar sesion y obtener JWT | No |
+| Auth | GET | /api/auth/profile | Obtener perfil del usuario autenticado | Si (Bearer) |
+| Accounts | GET | /api/accounts/my-account | Ver saldo y datos de la cuenta propia | Si (Bearer) |
+| Accounts | PATCH | /api/accounts/change-alias | Cambiar alias de la cuenta | Si (Bearer) |
+| Transactions | POST | /api/transactions/deposit | Cargar saldo en la cuenta | Si (Bearer) |
+| Transactions | POST | /api/transactions/transfer | Transferir dinero por alias, dni, username o email | Si (Bearer) |
+| Transactions | GET | /api/transactions/history | Ver historial de transferencias y movimientos | Si (Bearer) |
 
-## Support
+---
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Prisma Studio
+Para explorar y administrar la base de datos de forma visual:
+```bash
+npx prisma studio
+```
+Se abre en: `http://localhost:5555`
